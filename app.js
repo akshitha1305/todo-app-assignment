@@ -26,31 +26,62 @@ const initializeDbAndServer = async () => {
   }
 };
 initializeDbAndServer();
+const isStatusPropertyValid = (request, response) => {
+  response.status(400);
+  response.send("Invalid Todo Status");
+};
 
+const isPriorityPropertyValid = (request, response) => {
+  response.status(400);
+  response.send("Invalid Todo Priority");
+};
+
+const statusValues = ["TO DO", "IN PROGRESS", "DONE"];
+const priorityValues = ["HIGH", "MEDIUM", "LOW"];
+const categoryValues = ["WORK", "HOME", "LEARNING"];
 //get todos
 const hasStatusProperty = (requestQuery) => {
-  return requestQuery.status !== undefined;
+  if (statusValues.includes(requestQuery.status)) {
+    return true;
+  } else {
+    isStatusPropertyValid();
+  }
 };
 const hasPriorityProperty = (requestQuery) => {
-  return requestQuery.priority !== undefined;
+  if (priorityValues.includes(requestQuery.priority)) {
+    return true;
+  } else {
+    isPriorityPropertyValid();
+  }
 };
 const hasPriorityAndStatusProperty = (requestQuery) => {
-  return (
-    requestQuery.priority !== undefined && requestQuery.status !== undefined
-  );
+  if (
+    priorityValues.includes(requestQuery.priority) &&
+    statusValues.includes(requestQuery.status)
+  ) {
+    return true;
+  }
 };
 const hasCategoryAndStatus = (requestQuery) => {
-  return (
-    requestQuery.category !== undefined && requestQuery.status !== undefined
-  );
+  if (
+    categoryValues.includes(requestQuery.category) &&
+    statusValues.includes(requestQuery.status)
+  ) {
+    return true;
+  }
 };
 const hasCategoryProperty = (requestQuery) => {
-  return requestQuery.category !== undefined;
+  if (categoryValues.includes(requestQuery.category)) {
+    return true;
+  }
 };
 const hasCategoryAndPriority = (requestQuery) => {
-  return (
-    requestQuery.category !== undefined && requestQuery.priority !== undefined
-  );
+  if (
+    categoryValues.includes(requestQuery.category) &&
+    priorityValues.includes(requestQuery.priority)
+  ) {
+    return true;
+  }
 };
 
 app.get("/todos/", async (request, response) => {
@@ -61,8 +92,8 @@ app.get("/todos/", async (request, response) => {
   switch (true) {
     case hasStatusProperty(request.query):
       getTodoDetails = `
-            SELECT * FROM todo WHERE status = '${status}';
-            `;
+        SELECT * FROM todo WHERE status = '${status}';
+        `;
       break;
     case hasPriorityProperty(request.query):
       getTodoDetails = `
@@ -104,7 +135,8 @@ app.get("/todos/", async (request, response) => {
 app.get("/todos/:todoId", async (request, response) => {
   const { todoId } = request.params;
   const getTodoDetails = `
-    SELECT * FROM todo WHERE id = ${todoId};
+    SELECT id,todo,priority, status, category, due_date AS dueDate
+     FROM todo WHERE id = ${todoId};
     `;
   const data = await db.get(getTodoDetails);
   response.send(data);
