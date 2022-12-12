@@ -27,23 +27,6 @@ const initializeDbAndServer = async () => {
 };
 initializeDbAndServer();
 
-const isNotValid = (property, request, response) => {
-  response.status(400);
-  response.send(`Invalid Todo ${property}`);
-};
-
-const isValidProperty = (property) => {
-  if (
-    property.status === "HIGH" ||
-    property.status === "MEDIUM" ||
-    property.status === "LOW"
-  ) {
-    return true;
-  } else {
-    return isNotValid(property.status);
-  }
-};
-
 //get todos
 const hasStatusProperty = (requestQuery) => {
   return requestQuery.status !== undefined;
@@ -77,7 +60,6 @@ app.get("/todos/", async (request, response) => {
 
   switch (true) {
     case hasStatusProperty(request.query):
-      isValidProperty(request.query);
       getTodoDetails = `
             SELECT * FROM todo WHERE status = '${status}';
             `;
@@ -131,37 +113,24 @@ app.get("/todos/:todoId", async (request, response) => {
 //get todos with specific due dates
 app.get("/agenda/", async (request, response) => {
   const { date } = request.query;
-  const a = format(new Date(date), "yyyy-MM-dd");
-  const [year, month, day] = a.split("-");
-  const y = new Date(+year, month - 1, +day);
-  const res = isValid(y);
-
-  if (res === false) {
+  if (date === undefined) {
     response.status(400);
     response.send("Invalid Due Date");
   } else {
-    const getTodoDetails = `
-    SELECT * FROM todo WHERE due_date = '${a}';
-    `;
-    const data = await db.all(getTodoDetails);
-    console.log(data);
-    const convertSnakeCaseToCamelCase = (dbObj) => {
-      return {
-        id: dbObj.id,
-        todo: dbObj.todo,
-        priority: dbObj.priority,
-        status: dbObj.status,
-        category: dbObj.category,
-        dueDate: dbObj.due_date,
-      };
-    };
-    let arr = [];
-    for (let each of data) {
-      const a = convertSnakeCaseToCamelCase(each);
-      arr.push(a);
+    const isValidDate = isValid(new Date(date));
+    if (isValidDate) {
+      const formatDate = format(new Date(date), "yyyy-MM-dd");
+      const getQuery = `
+         SELECT id, todo, priority, status, category, due_date AS dueDate
+         FROM todo
+         WHERE due_date = '${formatDate}';
+         `;
+      const dbResponse = await db.all(getQuery);
+      response.send(dbResponse);
+    } else {
+      response.status(400);
+      response.send("Invalid Due Date");
     }
-    console.log(arr);
-    response.send(arr);
   }
 });
 
