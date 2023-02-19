@@ -71,6 +71,7 @@ const hasCategoryAndStatus = (requestQuery) => {
   }
 };
 const hasCategoryProperty = (requestQuery) => {
+  console.log(requestQuery);
   if (categoryValues.includes(requestQuery.category)) {
     return true;
   }
@@ -126,9 +127,23 @@ app.get("/todos/", async (request, response) => {
         `;
       break;
   }
-
   data = await db.all(getTodoDetails);
-  response.send(data);
+  let newList = [];
+  convertToCamelCase = (each) => {
+    return {
+      id: `${each.id}`,
+      todo: `${each.todo}`,
+      priority: `${each.priority}`,
+      status: `${each.status}`,
+      category: `${each.category}`,
+      dueDate: `${each.due_date}`,
+    };
+  };
+  for (let each of data) {
+    let k = convertToCamelCase(each);
+    newList.push(k);
+  }
+  response.send(newList);
 });
 
 //get todo by todoId
